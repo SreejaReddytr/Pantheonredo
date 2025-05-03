@@ -165,3 +165,151 @@ steps:
 5. Add your scheme to `SCHEMES` in `.travis.yml` for continuous integration testing.
 
 6. Send us a pull request and that's it, you're in the Pantheon!
+7. 
+
+
+# 📘 Pantheon Congestion Control Evaluation
+
+This repository contains my implementation and analysis of congestion control protocols using the [Pantheon framework](https://github.com/StanfordSNR/pantheon) and [Mahimahi](https://github.com/ravinet/mahimahi) network emulator. The goal is to benchmark different congestion control algorithms under controlled conditions and evaluate them based on throughput, latency, and packet loss.
+
+---
+
+## 🔧 Environment Setup
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/SreejaReddytr/pantheonredo.git
+cd pantheonredo
+```
+
+### 2. Install Dependencies
+```bash
+sudo apt update
+sudo apt install -y \
+    build-essential python2.7 python-pip \
+    git libssl-dev libprotobuf-dev protobuf-compiler \
+    mahimahi texlive-full cmake g++ \
+    libboost-all-dev libgflags-dev libgoogle-glog-dev
+```
+
+### 3. Enable IP Forwarding
+```bash
+sudo sysctl -w net.ipv4.ip_forward=1
+```
+
+### 4. Setup Pantheon
+```bash
+cd src
+python2 experiments/setup.py --setup
+python2 experiments/setup.py --all
+```
+
+---
+
+## 🚦 Experiment Setup
+
+We used **Mahimahi** to simulate two different network environments:
+
+### ✨ Scenario 1: Low Latency, High Bandwidth
+- **50 Mbps** bandwidth
+- **10 ms** round-trip delay
+- **Duration:** 60 seconds
+- **Protocols:** `cubic`, `fillp`, `vivace`
+
+```bash
+python2 experiments/test.py local \
+  --schemes "cubic fillp vivace" \
+  --data-dir experiments/test_results_scenario1 \
+  --runtime 60 \
+  --uplink-trace traces/50mbps.trace \
+  --downlink-trace traces/50mbps.trace \
+  --prepend-mm-cmds "mm-delay 5" \
+  --extra-mm-link-args "--uplink-queue=droptail --downlink-queue=droptail --uplink-queue-args=packets=500 --downlink-queue-args=packets=500"
+```
+
+### 🚨 Scenario 2: High Latency, Low Bandwidth
+- **1 Mbps** bandwidth
+- **200 ms** round-trip delay
+- **Duration:** 60 seconds
+- **Protocols:** `cubic`, `fillp`, `vivace`
+
+```bash
+python2 experiments/test.py local \
+  --schemes "cubic fillp vivace" \
+  --data-dir experiments/test_results_scenario2 \
+  --runtime 60 \
+  --uplink-trace traces/1mbps.trace \
+  --downlink-trace traces/1mbps.trace \
+  --prepend-mm-cmds "mm-delay 100" \
+  --extra-mm-link-args "--uplink-queue=droptail --downlink-queue=droptail --uplink-queue-args=packets=500 --downlink-queue-args=packets=500"
+```
+
+---
+
+## 📊 Analysis & Graphs
+
+After running the experiments, generate analysis and graphs:
+
+```bash
+python2 analysis/analyze.py --data-dir experiments/test_results_scenario1
+python2 analysis/report.py --data-dir experiments/test_results_scenario1
+
+python2 analysis/analyze.py --data-dir experiments/test_results_scenario2
+python2 analysis/report.py --data-dir experiments/test_results_scenario2
+```
+
+Each scenario folder will contain:
+- Delay and throughput plots for each scheme
+- Summary comparison charts
+- `pantheon_report.pdf` with auto-generated analysis
+
+---
+
+## 🧠 Summary of Observations
+
+- **Cubic** was the most aggressive in both scenarios, delivering high throughput but resulting in high delay and packet loss, especially under constrained bandwidth.
+- **Vivace** attempted to push bandwidth like Cubic but suffered from extreme queuing delays, reaching RTTs of over 9 seconds.
+- **FillP** demonstrated moderate performance with a good balance between delay and throughput.
+
+For more detailed analysis, refer to the final report PDF below.
+
+---
+
+## 📁 Project Structure
+
+```
+pantheonredo/
+├── src/
+│   └── experiments/
+│       ├── test_results_scenario1/
+│       ├── test_results_scenario2/
+│       └── traces/
+├── analysis/
+│   └── report.py
+├── README.md
+└── pantheon_report.pdf (generated)
+```
+
+---
+
+## 📎 Final Report & Submission
+
+- ✅ [Final Report PDF](link-to-your-generated-pantheon-report.pdf)
+- ✅ [GitHub Repo](https://github.com/SreejaReddytr/pantheonredo)
+
+---
+
+## 🤝 Acknowledgments
+
+- Stanford Network Research Group – Pantheon framework
+- MIT – Mahimahi emulator
+- My peers and LLMs that helped troubleshoot Python 2.7, YAML errors, and build problems on modern systems.
+
+---
+
+## 📌 Notes
+
+- Use **Python 2.7** only. Pantheon does not support Python 3.x.
+- Mahimahi must be compiled from source if not available via apt.
+- This repo is made public for reproducibility and grading.
+
